@@ -9,6 +9,7 @@ import com.example.poc.repository.AccountRepository;
 import com.example.poc.repository.ValidationLogRepository;
 import com.example.poc.entity.ValidationLog;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -90,10 +91,10 @@ public class AccountService {
         }
 
         public AccountDetailsResponse getAccountDetails(
-        String accountNumber) {
+        UUID userId) {
 
     Account account =
-            repository.findByAccountNumber(accountNumber)
+            repository.findByUserId(userId)
             .orElse(null);
 
     if (account == null) {
@@ -101,7 +102,7 @@ public class AccountService {
     }
 
     User user =
-            userRepository.findById(account.getUserId())
+            userRepository.findById(userId)
             .orElse(null);
 
     if (user == null) {
