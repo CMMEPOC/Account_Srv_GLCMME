@@ -1,121 +1,80 @@
 package com.example.poc.service;
 
 import com.example.poc.dto.AccountDetailsResponse;
-import com.example.poc.entity.User;
-import com.example.poc.repository.UserRepository;
 import com.example.poc.dto.BalanceResponse;
 import com.example.poc.entity.Account;
+import com.example.poc.entity.User;
 import com.example.poc.repository.AccountRepository;
-import com.example.poc.repository.ValidationLogRepository;
-import com.example.poc.entity.ValidationLog;
-import java.time.LocalDateTime;
+import com.example.poc.repository.UserRepository;
+
 import java.util.UUID;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AccountService {
 
-    @Autowired
-    private AccountRepository repository;
+    private final AccountRepository repository;
+    private final UserRepository userRepository;
 
-    @Autowired
-    private UserRepository userRepository;
+    public AccountService(
+            AccountRepository repository,
+            UserRepository userRepository) {
 
-    @Autowired
-    private ValidationLogRepository logRepository;
+        this.repository = repository;
+        this.userRepository = userRepository;
+    }
 
     public BalanceResponse validateBalance(
-        String accountNumber,
-        Double amount) {
+            String accountNumber,
+            Double amount) {
 
-    long startTime = System.currentTimeMillis();
+        Account account =
+                repository.findByAccountNumber(accountNumber)
+                        .orElse(null);
 
-    Account account =
-            repository.findByAccountNumber(accountNumber)
-            .orElse(null);
+        if (account == null) {
+            return new BalanceResponse(
+                    false,
+                    "Account Not Found");
+        }
 
-    ValidationLog log = new ValidationLog();
-
-    log.setAccountNumber(accountNumber);
-    log.setTransferAmount(amount);
-    log.setValidationTime(LocalDateTime.now());
-
-    if(account == null) {
-
-        long responseTime =
-                System.currentTimeMillis() - startTime;
-
-        log.setValidationStatus("REJECTED");
-        log.setMessage("Account Not Found");
-        log.setResponseTimeMs(responseTime);
-
-        logRepository.save(log);
+        if (account.getCurrentBalance().doubleValue() >= amount) {
+            return new BalanceResponse(
+                    true,
+                    "Transfer Approved");
+        }
 
         return new BalanceResponse(
                 false,
-                "Account Not Found");
+                "Insufficient Balance");
     }
 
-    if(account.getCurrentBalance()
-        .doubleValue() >= amount) {
+    public AccountDetailsResponse getAccountDetails(
+            UUID userId) {
 
-        long responseTime =
-                System.currentTimeMillis() - startTime;
+        Account account =
+                repository.findByUserId(userId)
+                        .orElse(null);
 
-        log.setValidationStatus("APPROVED");
-        log.setMessage("Transfer Approved");
-        log.setResponseTimeMs(responseTime);
-
-        logRepository.save(log);
-
-        return new BalanceResponse(
-                true,
-                "Transfer Approved");
-    }
-
-    long responseTime =
-            System.currentTimeMillis() - startTime;
-
-    log.setValidationStatus("REJECTED");
-    log.setMessage("Insufficient Balance");
-    log.setResponseTimeMs(responseTime);
-
-    logRepository.save(log);
-
-    return new BalanceResponse(
-            false,
-            "Insufficient Balance");
-
+        if (account == null) {
+            return null;
         }
 
-        public AccountDetailsResponse getAccountDetails(
-        UUID userId) {
+        User user =
+                userRepository.findById(userId)
+                        .orElse(null);
 
-    Account account =
-            repository.findByUserId(userId)
-            .orElse(null);
-
-    if (account == null) {
-        return null;
-    }
-
-    User user =
-            userRepository.findById(userId)
-            .orElse(null);
-
-    if (user == null) {
-        return null;
-    }
-
-    return new AccountDetailsResponse(
-            user.getUsername(),
-            account.getAccountNumber(),
-            account.getCurrentBalance(),
-            account.getIfsc(),
-            account.getBankName(),
-            account.getAccountType()
-    );
+        if (user == null) {
+            return null;
         }
+
+        return new AccountDetailsResponse(
+                user.getUserName(),
+                account.getAccountNumber(),
+                account.getCurrentBalance(),
+                account.getIfsc(),
+                account.getBankName(),
+                account.getAccountType());
+    }
 }

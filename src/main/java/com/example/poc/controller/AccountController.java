@@ -3,16 +3,20 @@ package com.example.poc.controller;
 import com.example.poc.dto.AccountDetailsResponse;
 import com.example.poc.dto.BalanceResponse;
 import com.example.poc.service.AccountService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+
 import java.util.UUID;
+
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/accounts")
 public class AccountController {
 
-    @Autowired
-    private AccountService service;
+    private final AccountService service;
+
+    public AccountController(AccountService service) {
+        this.service = service;
+    }
 
     @GetMapping("/validate")
     public BalanceResponse validateBalance(
@@ -24,9 +28,9 @@ public class AccountController {
                 amount);
     }
 
-    @GetMapping("/details/{userId}")
+    @GetMapping("/accountDetails/{userId}")
     public AccountDetailsResponse getAccountDetails(
-        @PathVariable UUID userId) {
+            @PathVariable UUID userId) {
 
         return service.getAccountDetails(userId);
     }
