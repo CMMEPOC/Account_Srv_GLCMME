@@ -1,4 +1,4 @@
-package com.example.poc.dto;
+package com.example.poc.dto.response;
 
 import java.math.BigDecimal;
 
